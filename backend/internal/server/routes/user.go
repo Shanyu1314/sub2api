@@ -154,5 +154,12 @@ func RegisterUserRoutes(
 			monitorV2.GET("/errors", h.ChannelMonitorV2.Errors)
 			monitorV2.GET("/users", h.ChannelMonitorV2.Users)
 		}
+
+		// 模型操练场（文本 MVP）
+		playground := authenticated.Group("/playground")
+		{
+			playground.GET("/models", h.Playground.Models)
+			playground.POST("/chat", h.Playground.Chat)
+		}
 	}
 }
