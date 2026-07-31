@@ -1922,6 +1922,11 @@
           </button>
         </div>
       </div>
+      <OpenAIImagesChatAdapterFields
+        v-if="account?.platform === 'openai' && account?.type === 'apikey'"
+        v-model:enabled="openAIImagesViaChatCompletionsEnabled"
+        v-model:chat-path="openAIImagesChatPath"
+      />
 
       <!-- OpenAI Codex hosted image_generation bridge policy -->
       <div
@@ -3270,6 +3275,7 @@ import {
 } from '@/utils/geminiExplicitCache'
 import OpenCodeGoProtocolRulesEditor from '@/components/account/OpenCodeGoProtocolRulesEditor.vue'
 import HeaderOverrideEditor from '@/components/account/HeaderOverrideEditor.vue'
+import OpenAIImagesChatAdapterFields from '@/components/account/OpenAIImagesChatAdapterFields.vue'
 import OllamaCloudUsageSettings from '@/components/account/OllamaCloudUsageSettings.vue'
 import {
   applyAntigravityProjectID,
@@ -3846,6 +3852,8 @@ const customBaseUrl = ref('')
 const openaiPassthroughEnabled = ref(false)
 // OpenAI Codex namespace 工具摊平兼容开关（仅 OAuth），缺省关闭即原样保留
 const openaiFlattenNamespacesEnabled = ref(false)
+const openAIImagesViaChatCompletionsEnabled = ref(false)
+const openAIImagesChatPath = ref('/v1/chat/completions')
 const openAILongContextBillingEnabled = ref(false)
 // OpenAI 订阅档位（Plus / Pro 20x / Pro 5x / Business Standard / Business Premium / Free）手动覆盖值,
 // 存于 credentials.plan_type;'' 表示清空/自动识别
@@ -4346,6 +4354,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   // Load OpenAI passthrough toggle (OpenAI OAuth/SetupToken/API Key)
   openaiPassthroughEnabled.value = false
   openaiFlattenNamespacesEnabled.value = false
+  openAIImagesViaChatCompletionsEnabled.value = false
+  openAIImagesChatPath.value = '/v1/chat/completions'
   openAILongContextBillingEnabled.value = false
   editPlanType.value = ''
   openAICompactMode.value = 'auto'
@@ -4365,6 +4375,15 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     openaiPassthroughEnabled.value = extra?.openai_passthrough === true || extra?.openai_oauth_passthrough === true
     openaiFlattenNamespacesEnabled.value =
       newAccount.type === 'oauth' && extra?.openai_responses_flatten_namespaces === true
+    if (newAccount.type === 'apikey') {
+      openAIImagesViaChatCompletionsEnabled.value =
+        extra?.openai_images_via_chat_completions === true ||
+        extra?.images_via_chat_completions === true
+      openAIImagesChatPath.value =
+        typeof extra?.openai_images_chat_path === 'string' && extra.openai_images_chat_path.trim()
+          ? extra.openai_images_chat_path.trim()
+          : '/v1/chat/completions'
+    }
     const longContextBillingValue = extra?.openai_long_context_billing_enabled
     openAILongContextBillingEnabled.value = longContextBillingValue === true
     // plan_type 手动覆盖仅 OAuth 有实际调度语义(IsOpenAIChatGPTSubscription 要求 oauth),故只对 oauth 回填
@@ -5940,6 +5959,19 @@ const handleSubmit = async () => {
           delete newExtra.web_search_emulation
         } else {
           newExtra.web_search_emulation = webSearchEmulationMode.value
+        }
+        if (openAIImagesViaChatCompletionsEnabled.value) {
+          newExtra.openai_images_via_chat_completions = true
+          const chatPath = openAIImagesChatPath.value.trim()
+          if (chatPath && chatPath !== '/v1/chat/completions') {
+            newExtra.openai_images_chat_path = chatPath
+          } else {
+            delete newExtra.openai_images_chat_path
+          }
+        } else {
+          delete newExtra.openai_images_via_chat_completions
+          delete newExtra.images_via_chat_completions
+          delete newExtra.openai_images_chat_path
         }
 		}
 		if (autoPause5hThreshold.value != null && autoPause5hThreshold.value > 0) {

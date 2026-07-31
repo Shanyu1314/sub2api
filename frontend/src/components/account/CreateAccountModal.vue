@@ -3345,6 +3345,11 @@
           </button>
         </div>
       </div>
+      <OpenAIImagesChatAdapterFields
+        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        v-model:enabled="openAIImagesViaChatCompletionsEnabled"
+        v-model:chat-path="openAIImagesChatPath"
+      />
 
       <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
       <div
@@ -4168,6 +4173,7 @@ import { applyExplicitCacheUpstreamCredentials, isOfficialGeminiBaseUrl } from '
 import OpenCodeGoProtocolRulesEditor from '@/components/account/OpenCodeGoProtocolRulesEditor.vue'
 import HeaderOverrideEditor from '@/components/account/HeaderOverrideEditor.vue'
 import { allSelectedGroupsEnableLongContextPricing } from '@/components/account/longContextBilling'
+import OpenAIImagesChatAdapterFields from '@/components/account/OpenAIImagesChatAdapterFields.vue'
 import {
   applyAntigravityProjectID,
   applyHeaderOverride,
@@ -4703,6 +4709,8 @@ const autoPauseOnExpired = ref(true)
 const openaiPassthroughEnabled = ref(false)
 // OpenAI Codex namespace 工具摊平兼容开关（仅 OAuth），缺省关闭即原样保留
 const openaiFlattenNamespacesEnabled = ref(false)
+const openAIImagesViaChatCompletionsEnabled = ref(false)
+const openAIImagesChatPath = ref('/v1/chat/completions')
 const openAILongContextBillingEnabled = ref(false)
 const openAILongContextBillingTouched = ref(false)
 const openAICompactMode = ref<OpenAICompactMode>('auto')
@@ -5211,6 +5219,8 @@ watch(
     if (newPlatform !== 'openai') {
       openaiPassthroughEnabled.value = false
       openaiFlattenNamespacesEnabled.value = false
+      openAIImagesViaChatCompletionsEnabled.value = false
+      openAIImagesChatPath.value = '/v1/chat/completions'
       openAIEndpointCapabilities.value = ['chat_completions', 'embeddings']
       openaiOAuthResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
       openaiAPIKeyResponsesWebSocketV2Mode.value = OPENAI_WS_MODE_OFF
@@ -5669,6 +5679,8 @@ const resetForm = () => {
   autoPauseOnExpired.value = true
   openaiPassthroughEnabled.value = false
   openaiFlattenNamespacesEnabled.value = false
+  openAIImagesViaChatCompletionsEnabled.value = false
+  openAIImagesChatPath.value = '/v1/chat/completions'
   openAILongContextBillingEnabled.value = false
   openAILongContextBillingTouched.value = false
   openAICompactMode.value = 'auto'
@@ -5806,6 +5818,19 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     extra.images_url_to_b64_json = true
   } else {
     delete extra.images_url_to_b64_json
+  }
+  if (accountCategory.value === 'apikey' && openAIImagesViaChatCompletionsEnabled.value) {
+    extra.openai_images_via_chat_completions = true
+    const chatPath = openAIImagesChatPath.value.trim()
+    if (chatPath && chatPath !== '/v1/chat/completions') {
+      extra.openai_images_chat_path = chatPath
+    } else {
+      delete extra.openai_images_chat_path
+    }
+  } else {
+    delete extra.openai_images_via_chat_completions
+    delete extra.images_via_chat_completions
+    delete extra.openai_images_chat_path
   }
 
   return Object.keys(extra).length > 0 ? extra : undefined
