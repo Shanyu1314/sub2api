@@ -125,7 +125,8 @@ func TestForwardOpenAIImagesViaChatCompletionsEdits(t *testing.T) {
 	require.Equal(t, 1, result.ImageCount)
 	require.Equal(t, "https://cdn.example/edited.png", gjson.Get(recorder.Body.String(), "data.0.url").String())
 
-	upstream := svc.httpUpstream.(*httpUpstreamRecorder)
+	upstream, ok := svc.httpUpstream.(*httpUpstreamRecorder)
+	require.True(t, ok)
 	require.Equal(t, "https://upstream.example/v1/chat/completions", upstream.lastReq.URL.String())
 	require.Equal(t, "Bearer secret", upstream.lastReq.Header.Get("Authorization"))
 	require.Equal(t, "image-2", gjson.GetBytes(upstream.lastBody, "model").String())
