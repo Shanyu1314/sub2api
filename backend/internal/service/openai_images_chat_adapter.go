@@ -271,9 +271,7 @@ func buildOpenAIImagesChatCompletionsURLWithPath(base string, path string) strin
 	}
 	normalizedBase := strings.TrimRight(strings.TrimSpace(base), "/")
 	if strings.HasPrefix(trimmedPath, "/") {
-		if strings.HasSuffix(normalizedBase, "/v1") {
-			normalizedBase = strings.TrimSuffix(normalizedBase, "/v1")
-		}
+		normalizedBase = strings.TrimSuffix(normalizedBase, "/v1")
 		return normalizedBase + trimmedPath
 	}
 	return normalizedBase + "/" + trimmedPath
