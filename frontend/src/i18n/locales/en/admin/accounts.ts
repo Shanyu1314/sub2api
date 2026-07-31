@@ -486,6 +486,12 @@ export default {
       openai: {
         baseUrlHint: 'Leave default for official OpenAI API',
         apiKeyHint: 'Your OpenAI API Key',
+        imagesViaChat: 'Route Images through Chat Completions',
+        imagesViaChatDesc:
+          'For API key upstreams that return images through Chat Completions instead of native /v1/images endpoints. Clients still call the standard /v1/images/generations or /v1/images/edits endpoints.',
+        imagesChatPath: 'Upstream Chat path',
+        imagesChatPathDesc:
+          'Defaults to /v1/chat/completions. A Base URL ending in /v1 is normalized to avoid duplicate path segments.',
         oauthPassthrough: 'Auto passthrough (auth only)',
         oauthPassthroughDesc:
           'When enabled, this OpenAI account uses automatic passthrough: the gateway forwards request/response as-is and only swaps auth, while keeping billing/concurrency/audit and necessary safety filtering.',

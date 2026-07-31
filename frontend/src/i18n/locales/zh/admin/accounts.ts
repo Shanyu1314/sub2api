@@ -553,6 +553,12 @@ export default {
       openai: {
         baseUrlHint: '留空使用官方 OpenAI API',
         apiKeyHint: '您的 OpenAI API Key',
+        imagesViaChat: '图片接口转 Chat Completions',
+        imagesViaChatDesc:
+          '仅用于上游没有 /v1/images 接口、而是通过 Chat Completions 返回图片的 API Key 账号。开启后，外部仍调用标准 /v1/images/generations 或 /v1/images/edits。',
+        imagesChatPath: '上游 Chat 路径',
+        imagesChatPathDesc:
+          '默认 /v1/chat/completions。Base URL 已含 /v1 时不会重复拼接；仅在上游使用非标准路径时修改。',
         oauthPassthrough: '自动透传（仅替换认证）',
         oauthPassthroughDesc:
           '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留计费/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',

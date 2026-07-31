@@ -586,6 +586,12 @@ func (s *OpenAIGatewayService) forwardOpenAIImagesAPIKey(
 		return nil, err
 	}
 	upstreamModel := account.GetMappedModel(requestModel)
+	if strings.TrimSpace(upstreamModel) == "" {
+		upstreamModel = requestModel
+	}
+	if openAIImagesViaChatCompletions(account) {
+		return s.forwardOpenAIImagesViaChatCompletions(ctx, c, account, parsed, requestModel, upstreamModel, startTime)
+	}
 	if err := validateOpenAIImagesModel(upstreamModel); err != nil {
 		return nil, err
 	}
