@@ -23,6 +23,38 @@
 
       <!-- Platform-specific content -->
       <template v-else>
+        <div class="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-dark-700">
+          <button
+            type="button"
+            class="rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="setupMode === 'recommended'
+              ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-800 dark:text-primary-300'
+              : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+            @click="setupMode = 'recommended'"
+          >
+            {{ t('keys.useKeyModal.setupModeRecommended') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="setupMode === 'advanced'
+              ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-800 dark:text-primary-300'
+              : 'text-gray-600 hover:text-gray-900 dark:text-dark-300 dark:hover:text-white'"
+            @click="setupMode = 'advanced'"
+          >
+            {{ t('keys.useKeyModal.setupModeAdvanced') }}
+          </button>
+        </div>
+
+        <ClientConfigQuickSetup
+          v-if="setupMode === 'recommended'"
+          :api-key="apiKey"
+          :base-url="baseUrl"
+          :platform="platform"
+          :allow-messages-dispatch="allowMessagesDispatch"
+        />
+
+        <template v-else>
         <!-- Description -->
         <p class="text-sm text-gray-600 dark:text-gray-400">
           {{ platformDescription }}
@@ -179,6 +211,7 @@
             {{ platformNote }}
           </p>
         </div>
+        </template>
       </template>
     </div>
 
@@ -199,6 +232,7 @@
 import { ref, computed, h, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import ClientConfigQuickSetup from '@/components/keys/ClientConfigQuickSetup.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import type { GroupPlatform } from '@/types'
@@ -209,6 +243,7 @@ interface Props {
   baseUrl: string
   platform: GroupPlatform | null
   allowMessagesDispatch?: boolean
+  defaultSetupMode?: 'recommended' | 'advanced'
 }
 
 interface Emits {
@@ -235,6 +270,7 @@ const { t } = useI18n()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const copiedIndex = ref<number | null>(null)
+const setupMode = ref<'recommended' | 'advanced'>(props.defaultSetupMode || 'advanced')
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
 type CodexAuthMode = 'legacy' | 'api-key'
@@ -257,6 +293,7 @@ const defaultClientTab = computed(() => {
 })
 
 watch(() => props.platform, () => {
+  setupMode.value = props.defaultSetupMode || 'advanced'
   activeTab.value = 'unix'
   activeClientTab.value = defaultClientTab.value
   codexAuthMode.value = 'legacy'

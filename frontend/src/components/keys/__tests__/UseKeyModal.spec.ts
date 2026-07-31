@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
 const { copyToClipboardMock } = vi.hoisted(() => ({
@@ -21,6 +21,58 @@ vi.mock('@/composables/useClipboard', () => ({
 import UseKeyModal from '../UseKeyModal.vue'
 
 describe('UseKeyModal', () => {
+  it('loads models from the selected key in recommended setup mode', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        object: 'list',
+        data: [{ id: 'gpt-5.6-terra' }, { id: 'gpt-5.5' }]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        apiKey: 'sk-recommended-test',
+        baseUrl: 'https://example.com/v1/',
+        platform: 'openai',
+        defaultSetupMode: 'recommended'
+      },
+      global: {
+        stubs: {
+          BaseDialog: {
+            template: '<div><slot /><slot name="footer" /></div>'
+          },
+          Icon: {
+            template: '<span />'
+          }
+        }
+      }
+    })
+
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/v1/models',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer sk-recommended-test'
+        })
+      })
+    )
+    expect(wrapper.get('input[list^="client-model-options-"]').element).toHaveProperty(
+      'value',
+      'gpt-5.6-terra'
+    )
+    expect(wrapper.findAll('pre code').map((code) => code.text()).join('\n')).toContain(
+      'model = "gpt-5.6-terra"'
+    )
+
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  })
+
   it('renders Grok Build and OpenCode setup for Grok groups', async () => {
     const wrapper = mount(UseKeyModal, {
       props: {

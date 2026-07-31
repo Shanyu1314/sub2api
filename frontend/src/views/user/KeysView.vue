@@ -995,6 +995,7 @@
       :base-url="publicSettings?.api_base_url || ''"
       :platform="selectedKey?.group?.platform || null"
       :allow-messages-dispatch="selectedKey?.group?.allow_messages_dispatch || false"
+      default-setup-mode="recommended"
       @close="closeUseKeyModal"
     />
 
