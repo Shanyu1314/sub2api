@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   GROK_CC_SWITCH_MODEL,
   OPENAI_CC_SWITCH_CODEX_MODEL,
   buildCcSwitchImportDeeplink,
+  fetchCcSwitchAvailableModels,
+  resolveDefaultModel,
   resolveCcSwitchUsageUrl
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
@@ -21,11 +23,55 @@ describe('ccswitchImport utils', () => {
     expect(GROK_CC_SWITCH_MODEL).toBe('grok-4.5')
   })
 
+  it('resolves the default OpenAI model from the available models list', () => {
+    expect(resolveDefaultModel('openai', ['k3', 'kimi-for-coding'])).toBe('k3')
+    expect(
+      resolveDefaultModel('openai', ['gpt-5.6-sol', 'gpt-5.5', 'gpt-5.6-terra'])
+    ).toBe('gpt-5.5')
+    expect(resolveDefaultModel('openai', [])).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
+  })
+
+  it('resolves the default Grok model from the available models list', () => {
+    expect(resolveDefaultModel('grok', ['grok-4.5', 'grok-3'])).toBe(GROK_CC_SWITCH_MODEL)
+    expect(resolveDefaultModel('grok', ['grok-3'])).toBe('grok-3')
+    expect(resolveDefaultModel('grok', [])).toBe(GROK_CC_SWITCH_MODEL)
+  })
+
+  it('does not return a default model for non-model platforms', () => {
+    expect(resolveDefaultModel('anthropic', ['claude-test'])).toBeUndefined()
+    expect(resolveDefaultModel('gemini', [])).toBeUndefined()
+  })
+
+  it('fetches the available models list from the gateway', async () => {
+    const data = { data: [{ id: 'k3' }, { id: 'kimi-for-coding' }] }
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(data)
+    } as Response)
+
+    const models = await fetchCcSwitchAvailableModels('https://api.example.com/v1/', 'sk-test')
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.example.com/v1/models',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer sk-test' })
+      })
+    )
+    expect(models).toEqual(['k3', 'kimi-for-coding'])
+  })
+
+  it('returns an empty model list when the gateway request fails', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false } as Response)
+    const models = await fetchCcSwitchAvailableModels('https://api.example.com', 'sk-test')
+    expect(models).toEqual([])
+  })
+
   const baseInput = {
     baseUrl: 'https://api.example.com',
     providerName: 'Sub2API',
     apiKey: 'sk-test',
-    usageScript: 'return true'
+    usageScript: 'return true',
+    availableModels: []
   }
 
   it.each([
@@ -48,6 +94,22 @@ describe('ccswitchImport utils', () => {
     expect(params.get('endpoint')).toBe('https://api.example.com/v1')
     expect(params.get('model')).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
+  })
+
+  it('uses the first available model for OpenAI imports when the default is not available', () => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        baseUrl: 'https://api.example.com',
+        platform: 'openai',
+        clientType: 'claude',
+        availableModels: ['k3', 'kimi-for-coding']
+      })
+    )
+
+    expect(params.get('app')).toBe('codex')
+    expect(params.get('endpoint')).toBe('https://api.example.com/v1')
+    expect(params.get('model')).toBe('k3')
   })
 
   it.each([

@@ -1148,6 +1148,7 @@ import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
 import {
   buildCcSwitchImportDeeplink,
+  fetchCcSwitchAvailableModels,
   resolveCcSwitchUsageUrl,
   type CcSwitchClientType
 } from '@/utils/ccswitchImport'
@@ -1871,7 +1872,7 @@ const resetRateLimitUsage = async () => {
   }
 }
 
-const importToCcswitch = (row: ApiKey) => {
+const importToCcswitch = async (row: ApiKey) => {
   const platform = row.group?.platform || 'anthropic'
 
   // For antigravity platform, show client selection dialog
@@ -1882,12 +1883,16 @@ const importToCcswitch = (row: ApiKey) => {
   }
 
   // For other platforms, execute directly
-  executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
+  await executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
 }
 
-const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
+const executeCcsImport = async (row: ApiKey, clientType: CcSwitchClientType) => {
   const baseUrl = publicSettings.value?.api_base_url || window.location.origin
   const platform = row.group?.platform || 'anthropic'
+
+  // Fetch the actual model list for this key so CCSwitch gets a default model
+  // that this key can actually consume, not just a hardcoded global default.
+  const availableModels = await fetchCcSwitchAvailableModels(baseUrl, row.key)
 
   const usageUrl = resolveCcSwitchUsageUrl(baseUrl)
   const usageScript = `({
@@ -1906,14 +1911,17 @@ const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
       };
     }
   })`
-  const providerName = (publicSettings.value?.site_name || 'sub2api').trim() || 'sub2api'
+  const siteName = (publicSettings.value?.site_name || 'sub2api').trim() || 'sub2api'
+  const groupName = row.group?.name?.trim() || ''
+  const providerName = groupName ? `${siteName} - ${groupName}` : siteName
   const deeplink = buildCcSwitchImportDeeplink({
     baseUrl,
     platform,
     clientType,
     providerName,
     apiKey: row.key,
-    usageScript
+    usageScript,
+    availableModels
   })
 
   try {
@@ -1931,9 +1939,9 @@ const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
   }
 }
 
-const handleCcsClientSelect = (clientType: CcSwitchClientType) => {
+const handleCcsClientSelect = async (clientType: CcSwitchClientType) => {
   if (pendingCcsRow.value) {
-    executeCcsImport(pendingCcsRow.value, clientType)
+    await executeCcsImport(pendingCcsRow.value, clientType)
   }
   showCcsClientSelect.value = false
   pendingCcsRow.value = null
