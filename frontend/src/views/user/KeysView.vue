@@ -1148,6 +1148,7 @@ import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
 import {
   buildCcSwitchImportDeeplink,
+  resolveCcSwitchUsageUrl,
   type CcSwitchClientType
 } from '@/utils/ccswitchImport'
 
@@ -1888,9 +1889,10 @@ const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
   const baseUrl = publicSettings.value?.api_base_url || window.location.origin
   const platform = row.group?.platform || 'anthropic'
 
+  const usageUrl = resolveCcSwitchUsageUrl(baseUrl)
   const usageScript = `({
     request: {
-      url: "{{baseUrl}}/v1/usage",
+      url: "${usageUrl}",
       method: "GET",
       headers: { "Authorization": "Bearer {{apiKey}}" }
     },
