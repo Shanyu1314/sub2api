@@ -1921,7 +1921,8 @@ const executeCcsImport = async (row: ApiKey, clientType: CcSwitchClientType) => 
     providerName,
     apiKey: row.key,
     usageScript,
-    availableModels
+    availableModels,
+    groupName: row.group?.name
   })
 
   try {

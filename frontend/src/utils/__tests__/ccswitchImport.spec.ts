@@ -23,13 +23,20 @@ describe('ccswitchImport utils', () => {
     expect(GROK_CC_SWITCH_MODEL).toBe('grok-4.5')
   })
 
-  it('resolves the default OpenAI model from the available models list', () => {
-    expect(resolveDefaultModel('openai', ['k3', 'kimi-for-coding'])).toBe('k3')
+ it('resolves the default OpenAI model from the available models list', () => {
+   expect(resolveDefaultModel('openai', ['k3', 'kimi-for-coding'])).toBe('k3')
+   expect(
+     resolveDefaultModel('openai', ['gpt-5.6-sol', 'gpt-5.5', 'gpt-5.6-terra'])
+   ).toBe('gpt-5.5')
     expect(
-      resolveDefaultModel('openai', ['gpt-5.6-sol', 'gpt-5.5', 'gpt-5.6-terra'])
+      resolveDefaultModel('openai', ['gpt-5.5', 'gpt-5.6-sol', 'gpt-5.6-terra'], 'K12-GPT')
+    ).toBe('gpt-5.6-sol')
+    expect(resolveDefaultModel('openai', ['gpt-5.5', 'gpt-5.6-sol'], 'K12')).toBe('gpt-5.6-sol')
+    expect(
+      resolveDefaultModel('openai', ['gpt-5.5', 'gpt-5.6-terra'], 'K12-GPT')
     ).toBe('gpt-5.5')
-    expect(resolveDefaultModel('openai', [])).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
-  })
+   expect(resolveDefaultModel('openai', [])).toBe(OPENAI_CC_SWITCH_CODEX_MODEL)
+ })
 
   it('resolves the default Grok model from the available models list', () => {
     expect(resolveDefaultModel('grok', ['grok-4.5', 'grok-3'])).toBe(GROK_CC_SWITCH_MODEL)
@@ -103,13 +110,28 @@ describe('ccswitchImport utils', () => {
         baseUrl: 'https://api.example.com',
         platform: 'openai',
         clientType: 'claude',
-        availableModels: ['k3', 'kimi-for-coding']
-      })
+    availableModels: ['k3', 'kimi-for-coding']
+  })
     )
 
     expect(params.get('app')).toBe('codex')
     expect(params.get('endpoint')).toBe('https://api.example.com/v1')
     expect(params.get('model')).toBe('k3')
+  })
+
+  it('uses the K12 group override for OpenAI imports when the override model is available', () => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        ...baseInput,
+        baseUrl: 'https://api.example.com',
+        platform: 'openai',
+        clientType: 'claude',
+        availableModels: ['gpt-5.5', 'gpt-5.6-sol', 'gpt-5.6-terra'],
+        groupName: 'K12-GPT'
+      })
+    )
+
+    expect(params.get('model')).toBe('gpt-5.6-sol')
   })
 
   it.each([
