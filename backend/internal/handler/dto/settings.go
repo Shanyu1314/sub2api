@@ -283,6 +283,7 @@ type SystemSettings struct {
 	PaymentRechargeBonusTiers  []RechargeBonusTier `json:"payment_recharge_bonus_tiers"`
 	PaymentRechargeBonusMode   string              `json:"payment_recharge_bonus_mode"`
 	PaymentRechargeBonusNotice string              `json:"payment_recharge_bonus_notice"`
+	PaymentCardShopURL         string              `json:"payment_card_shop_url"`
 	PaymentLoadBalanceStrat    string              `json:"payment_load_balance_strategy"`
 	PaymentProductNamePrefix   string              `json:"payment_product_name_prefix"`
 	PaymentProductNameSuffix   string              `json:"payment_product_name_suffix"`

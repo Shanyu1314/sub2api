@@ -83,6 +83,7 @@ export interface CheckoutInfoResponse {
   recharge_bonus_mode?: string
   /** 充值页金额区顶部的 Markdown 活动文案；空 = 不展示 */
   recharge_bonus_notice?: string
+  card_shop_url?: string
   help_text: string
   help_image_url: string
   stripe_publishable_key: string

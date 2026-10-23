@@ -288,6 +288,16 @@ export default {
   // Payment System
   payment: {
     title: 'Recharge / Subscription',
+    cardRecharge: {
+      title: 'Redeem a card',
+      description: 'Enter a recharge code to add credit to your account. Codes are case-sensitive.',
+      placeholder: 'Enter recharge code (case-sensitive)',
+      redeem: 'Redeem code',
+      buy: 'Buy a card with buyer protection',
+      history: 'Redemption history',
+      success: 'Code redeemed successfully. Your balance has been refreshed.',
+      failure: 'Could not redeem the code. Check it and try again.',
+    },
     amountLabel: 'Amount',
     paymentAmount: 'Payment Amount',
     creditedBalance: 'Credited Balance',

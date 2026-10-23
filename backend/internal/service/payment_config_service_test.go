@@ -180,6 +180,17 @@ func TestParsePaymentConfig(t *testing.T) {
 		}
 	})
 
+	t.Run("card shop URL defaults and can be configured", func(t *testing.T) {
+		t.Parallel()
+		if got := svc.parsePaymentConfig(map[string]string{}).CardShopURL; got != DefaultCardShopURL {
+			t.Fatalf("default CardShopURL = %q, want %q", got, DefaultCardShopURL)
+		}
+		const customURL = "https://shop.example/cards"
+		if got := svc.parsePaymentConfig(map[string]string{SettingCardShopURL: customURL}).CardShopURL; got != customURL {
+			t.Fatalf("configured CardShopURL = %q, want %q", got, customURL)
+		}
+	})
+
 	t.Run("enabled types with spaces are trimmed", func(t *testing.T) {
 		t.Parallel()
 		vals := map[string]string{

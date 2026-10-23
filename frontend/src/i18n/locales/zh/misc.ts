@@ -312,6 +312,16 @@ export default {
   // Payment System
   payment: {
     title: '充值/订阅',
+    cardRecharge: {
+      title: '卡密充值',
+      description: '输入卡密为账户充值。卡密区分大小写。',
+      placeholder: '请输入卡密（区分大小写）',
+      redeem: '兑换卡密',
+      buy: '担保交易购买卡密',
+      history: '兑换记录',
+      success: '卡密兑换成功，余额已刷新。',
+      failure: '卡密兑换失败，请检查卡密后重试。',
+    },
     amountLabel: '充值金额',
     paymentAmount: '支付金额',
     creditedBalance: '到账余额',

@@ -24,6 +24,7 @@ const showError = vi.hoisted(() => vi.fn())
 const showInfo = vi.hoisted(() => vi.fn())
 const showWarning = vi.hoisted(() => vi.fn())
 const getCheckoutInfo = vi.hoisted(() => vi.fn())
+const redeemCode = vi.hoisted(() => vi.fn())
 const bridgeInvoke = vi.hoisted(() => vi.fn())
 const translate = vi.hoisted(() => vi.fn((key: string) => key))
 // Public settings live in a reactive holder so tests can flip feature flags after mount
@@ -100,6 +101,10 @@ vi.mock('@/api/payment', () => ({
   paymentAPI: {
     getCheckoutInfo,
   },
+}))
+
+vi.mock('@/api', () => ({
+  redeemAPI: { redeem: redeemCode },
 }))
 
 vi.mock('@/utils/device', () => ({
@@ -356,6 +361,67 @@ describe('PaymentView help text', () => {
     const wrapper = await mountHelp('', 'https://example.com/help.png')
     expect(wrapper.find('.markdown-body').exists()).toBe(false)
     expect(wrapper.get('img').attributes('src')).toBe('https://example.com/help.png')
+  })
+})
+
+describe('PaymentView card recharge', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+    routeState.path = '/purchase'
+    routeState.query = {}
+    redeemCode.mockReset()
+    refreshUser.mockReset().mockResolvedValue(undefined)
+  })
+
+  async function mountCardRecharge() {
+    getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture({ card_shop_url: 'https://wzyp.cn/shop/CCZ33PW7' }))
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          Teleport: true,
+          Transition: false,
+          'router-link': { template: '<a :href="to"><slot /></a>', props: ['to'] },
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+    return wrapper
+  }
+
+  it('redeems successfully and refreshes the account balance', async () => {
+    redeemCode.mockResolvedValue({ message: 'Redeemed', type: 'balance', value: 10 })
+    const wrapper = await mountCardRecharge()
+    const input = wrapper.get('input[type="password"]')
+    expect(input.attributes('autocomplete')).toBe('off')
+    expect(input.attributes('spellcheck')).toBe('false')
+    await input.setValue('CaseSensitiveCode')
+    await wrapper.get('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(redeemCode).toHaveBeenCalledWith('CaseSensitiveCode')
+    expect(refreshUser).toHaveBeenCalledOnce()
+    expect(wrapper.get('[role="status"]').text()).toBe('Redeemed')
+  })
+
+  it('shows redemption errors in the live status row', async () => {
+    redeemCode.mockRejectedValue(new Error('Invalid code'))
+    const wrapper = await mountCardRecharge()
+    await wrapper.get('input[type="password"]').setValue('bad-code')
+    await wrapper.get('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="status"]').text()).toBe('Invalid code')
+    expect(wrapper.get('[role="status"]').classes()).toContain('text-red-600')
+  })
+
+  it('uses a safe external shop link and links to redemption history', async () => {
+    const wrapper = await mountCardRecharge()
+    const shopLink = wrapper.get('a[target="_blank"]')
+    expect(shopLink.attributes('href')).toBe('https://wzyp.cn/shop/CCZ33PW7')
+    expect(shopLink.attributes('rel')).toBe('noopener noreferrer')
+    expect(wrapper.get('a[href="/redeem"]').text()).toBe('payment.cardRecharge.history')
   })
 })
 

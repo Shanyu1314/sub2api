@@ -721,6 +721,8 @@ export default {
         moveDown: '下移',
       },
       payment: {
+        cardShopURL: '卡密购买店铺地址',
+        cardShopURLPlaceholder: 'https://wzyp.cn/shop/CCZ33PW7',
         title: '支付设置',
         description: '配置支付系统选项',
         configGuide: '支付配置指南',

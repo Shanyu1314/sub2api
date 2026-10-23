@@ -29,6 +29,8 @@ const (
 	// 0/未配置 = 关闭换算（订阅按 price 数值直付），显式配置后 CNY 通道订阅按 price × rate 收款。
 	SettingSubscriptionUSDToCNYRate      = "SUBSCRIPTION_USD_TO_CNY_RATE"
 	SettingRechargeFeeRate               = "RECHARGE_FEE_RATE"
+	SettingCardShopURL                   = "PAYMENT_CARD_SHOP_URL"
+	DefaultCardShopURL                   = "https://wzyp.cn/shop/CCZ33PW7"
 	SettingProductNamePrefix             = "PRODUCT_NAME_PREFIX"
 	SettingProductNameSuffix             = "PRODUCT_NAME_SUFFIX"
 	SettingHelpImageURL                  = "PAYMENT_HELP_IMAGE_URL"
@@ -68,6 +70,7 @@ type PaymentConfig struct {
 	RechargeBonusMode string `json:"recharge_bonus_mode"`
 	// RechargeBonusNotice 充值页展示的 Markdown 活动文案；空表示不展示。
 	RechargeBonusNotice  string `json:"recharge_bonus_notice"`
+	CardShopURL          string `json:"card_shop_url"`
 	LoadBalanceStrategy  string `json:"load_balance_strategy"`
 	ProductNamePrefix    string `json:"product_name_prefix"`
 	ProductNameSuffix    string `json:"product_name_suffix"`
@@ -105,6 +108,7 @@ type UpdatePaymentConfigRequest struct {
 	RechargeBonusTiers  *[]RechargeBonusTier `json:"recharge_bonus_tiers"`
 	RechargeBonusMode   *string              `json:"recharge_bonus_mode"`
 	RechargeBonusNotice *string              `json:"recharge_bonus_notice"`
+	CardShopURL         *string              `json:"card_shop_url"`
 	LoadBalanceStrategy *string              `json:"load_balance_strategy"`
 	ProductNamePrefix   *string              `json:"product_name_prefix"`
 	ProductNameSuffix   *string              `json:"product_name_suffix"`
@@ -230,7 +234,7 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 		SettingPaymentEnabled, SettingMinRechargeAmount, SettingMaxRechargeAmount,
 		SettingDailyRechargeLimit, SettingOrderTimeoutMinutes, SettingMaxPendingOrders,
 		SettingEnabledPaymentTypes, SettingBalancePayDisabled, SettingBalanceRechargeMult, SettingSubscriptionUSDToCNYRate, SettingRechargeFeeRate, SettingLoadBalanceStrategy,
-		SettingRechargeBonusTiers, SettingRechargeBonusMode, SettingRechargeBonusNotice,
+		SettingRechargeBonusTiers, SettingRechargeBonusMode, SettingRechargeBonusNotice, SettingCardShopURL,
 		SettingProductNamePrefix, SettingProductNameSuffix,
 		SettingHelpImageURL, SettingHelpText,
 		SettingCancelRateLimitOn, SettingCancelRateLimitMax,
@@ -250,6 +254,10 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 }
 
 func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *PaymentConfig {
+	cardShopURL := strings.TrimSpace(vals[SettingCardShopURL])
+	if cardShopURL == "" {
+		cardShopURL = DefaultCardShopURL
+	}
 	cfg := &PaymentConfig{
 		Enabled:                   vals[SettingPaymentEnabled] == "true",
 		MinAmount:                 pcParseFloat(vals[SettingMinRechargeAmount], 1),
@@ -263,6 +271,7 @@ func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *Payme
 		RechargeFeeRate:           pcParseFloat(vals[SettingRechargeFeeRate], 0),
 		RechargeBonusTiers:        parseRechargeBonusTiers(vals[SettingRechargeBonusTiers]),
 		RechargeBonusNotice:       vals[SettingRechargeBonusNotice],
+		CardShopURL:               cardShopURL,
 		LoadBalanceStrategy:       vals[SettingLoadBalanceStrategy],
 		ProductNamePrefix:         vals[SettingProductNamePrefix],
 		ProductNameSuffix:         vals[SettingProductNameSuffix],
@@ -408,6 +417,9 @@ func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req Upda
 	}
 	if req.RechargeBonusNotice != nil {
 		m[SettingRechargeBonusNotice] = strings.TrimSpace(*req.RechargeBonusNotice)
+	}
+	if req.CardShopURL != nil {
+		m[SettingCardShopURL] = strings.TrimSpace(*req.CardShopURL)
 	}
 	if req.LoadBalanceStrategy != nil {
 		m[SettingLoadBalanceStrategy] = derefStr(req.LoadBalanceStrategy)

@@ -726,6 +726,8 @@ export default {
         moveDown: 'Move Down',
       },
       payment: {
+        cardShopURL: 'Recharge card shop URL',
+        cardShopURLPlaceholder: 'https://wzyp.cn/shop/CCZ33PW7',
         title: 'Payment Settings',
         description: 'Configure payment system options',
         configGuide: 'Configuration Guide',

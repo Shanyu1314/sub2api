@@ -8456,6 +8456,17 @@
             v-model:notice="form.payment_recharge_bonus_notice"
           />
 
+          <div class="card space-y-2 p-6">
+            <label class="input-label" for="payment-card-shop-url">{{ t("admin.settings.payment.cardShopURL") }}</label>
+            <input
+              id="payment-card-shop-url"
+              v-model="form.payment_card_shop_url"
+              type="url"
+              class="input"
+              :placeholder="t('admin.settings.payment.cardShopURLPlaceholder')"
+            />
+          </div>
+
           <!-- Provider Management -->
           <PaymentProviderList
             v-if="form.payment_enabled"
@@ -9760,6 +9771,7 @@ type SettingsForm = Omit<
   payment_recharge_bonus_tiers: RechargeBonusTierDraft[];
   payment_recharge_bonus_mode: RechargeBonusMode;
   payment_recharge_bonus_notice: string;
+  payment_card_shop_url: string;
   // 系统全局平台限额 map；form 内始终归一化为全部平台对象（模板非空绑定依赖此不变量）
   default_platform_quotas: DefaultPlatformQuotasMap;
   account_scheduling_thresholds: ReturnType<typeof normalizeAccountSchedulingThresholdsMap>;
@@ -9833,6 +9845,7 @@ const form = reactive<SettingsForm>({
   payment_recharge_bonus_tiers: [],
   payment_recharge_bonus_mode: "bonus",
   payment_recharge_bonus_notice: "",
+  payment_card_shop_url: "https://wzyp.cn/shop/CCZ33PW7",
   payment_enabled_types: [],
   payment_help_image_url: "",
   payment_help_text: "",
@@ -11110,6 +11123,7 @@ async function loadSettings() {
       settings.payment_recharge_bonus_mode,
     );
     form.payment_recharge_bonus_notice = settings.payment_recharge_bonus_notice || "";
+    form.payment_card_shop_url = settings.payment_card_shop_url || "https://wzyp.cn/shop/CCZ33PW7";
     form.default_platform_quotas = normalizePlatformQuotasMap(settings.default_platform_quotas);
     form.account_scheduling_thresholds = normalizeAccountSchedulingThresholdsMap(
       settings.account_scheduling_thresholds,
@@ -11722,6 +11736,7 @@ async function saveSettings() {
       ),
       payment_recharge_bonus_mode: form.payment_recharge_bonus_mode,
       payment_recharge_bonus_notice: form.payment_recharge_bonus_notice,
+      payment_card_shop_url: form.payment_card_shop_url,
       payment_enabled_types: form.payment_enabled_types,
       payment_load_balance_strategy: form.payment_load_balance_strategy,
       payment_product_name_prefix: form.payment_product_name_prefix,
