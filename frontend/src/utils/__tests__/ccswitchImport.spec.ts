@@ -3,7 +3,8 @@ import {
   CC_SWITCH_USAGE_SCRIPT,
   GROK_CC_SWITCH_MODEL,
   OPENAI_CC_SWITCH_CODEX_MODEL,
-  buildCcSwitchImportDeeplink
+  buildCcSwitchImportDeeplink,
+  resolveDefaultModel
 } from '@/utils/ccswitchImport'
 import type { GroupPlatform } from '@/types'
 
@@ -134,5 +135,38 @@ describe('CC Switch usage script', () => {
       ).get('endpoint') as string
       expect(usageUrlFor(endpoint)).toBe('https://api.example.com/v1/usage')
     }
+  })
+
+  it('falls back to the global default model when the key model list is unknown', () => {
+    expect(resolveDefaultModel('openai', undefined)).toBe('gpt-5.5')
+    expect(resolveDefaultModel('openai', [])).toBe('gpt-5.5')
+  })
+
+  it('uses the first available model when the global default is not served', () => {
+    expect(resolveDefaultModel('openai', ['gpt-5.6-terra', 'gpt-5.6-luna'])).toBe('gpt-5.6-terra')
+  })
+
+  it('prefers gpt-5.6-sol for K12 groups only when the key can serve it', () => {
+    const models = ['gpt-5.5', 'gpt-5.6-sol']
+    expect(resolveDefaultModel('openai', models, 'K12-GPT')).toBe('gpt-5.6-sol')
+    expect(resolveDefaultModel('openai', models, ' k12 ')).toBe('gpt-5.6-sol')
+    expect(resolveDefaultModel('openai', ['gpt-5.5'], 'K12')).toBe('gpt-5.5')
+    expect(resolveDefaultModel('openai', models, 'other')).toBe('gpt-5.5')
+  })
+
+  it('puts the key-specific default model into the Codex import link', () => {
+    const params = paramsFromDeeplink(
+      buildCcSwitchImportDeeplink({
+        baseUrl: 'https://api.example.com',
+        providerName: 'Sub2API',
+        apiKey: 'sk-test',
+        usageScript: 'return true',
+        platform: 'openai' as GroupPlatform,
+        clientType: 'claude',
+        availableModels: ['gpt-5.5', 'gpt-5.6-sol'],
+        groupName: 'K12-GPT'
+      })
+    )
+    expect(params.get('model')).toBe('gpt-5.6-sol')
   })
 })

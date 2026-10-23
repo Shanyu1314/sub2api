@@ -1235,6 +1235,7 @@ import { KEY_GROUP_PROVIDERS, KEY_GROUP_PROVIDER_ICONS, getKeyGroupProvider, typ
 import {
   CC_SWITCH_USAGE_SCRIPT,
   buildCcSwitchImportDeeplink,
+  fetchCcSwitchAvailableModels,
   type CcSwitchClientType
 } from '@/utils/ccswitchImport'
 
@@ -2024,19 +2025,28 @@ const importToCcswitch = (row: ApiKey) => {
   executeCcsImport(row, platform === 'gemini' ? 'gemini' : 'claude')
 }
 
-const executeCcsImport = (row: ApiKey, clientType: CcSwitchClientType) => {
+const executeCcsImport = async (row: ApiKey, clientType: CcSwitchClientType) => {
   const baseUrl = publicSettings.value?.api_base_url || window.location.origin
   const platform = row.group?.platform || 'anthropic'
 
   const usageScript = CC_SWITCH_USAGE_SCRIPT
-  const providerName = (publicSettings.value?.site_name || 'sub2api').trim() || 'sub2api'
+  const siteName = (publicSettings.value?.site_name || 'sub2api').trim() || 'sub2api'
+  const groupName = row.group?.name?.trim() || ''
+  const providerName = groupName ? `${siteName} - ${groupName}` : siteName
+  // Only openai/grok imports carry a default model, so skip the request otherwise.
+  const availableModels =
+    platform === 'openai' || platform === 'grok'
+      ? await fetchCcSwitchAvailableModels(baseUrl, row.key)
+      : undefined
   const deeplink = buildCcSwitchImportDeeplink({
     baseUrl,
     platform,
     clientType,
     providerName,
     apiKey: row.key,
-    usageScript
+    usageScript,
+    availableModels,
+    groupName
   })
 
   try {

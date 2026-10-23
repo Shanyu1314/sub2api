@@ -3,6 +3,14 @@ import type { GroupPlatform } from '@/types'
 export const OPENAI_CC_SWITCH_CODEX_MODEL = 'gpt-5.5'
 export const GROK_CC_SWITCH_MODEL = 'grok-4.5'
 
+// Group-specific default model overrides for openai-compatible groups.
+// Keys are matched against the group name (case-insensitive); the override is
+// only used when the model is present in the key's available model list.
+const OPENAI_CC_SWITCH_GROUP_DEFAULT_MODELS: Record<string, string> = {
+  k12: 'gpt-5.6-sol',
+  'k12-gpt': 'gpt-5.6-sol'
+}
+
 export type CcSwitchClientType = 'claude' | 'gemini'
 
 export interface CcSwitchImportConfig {
@@ -18,6 +26,8 @@ export interface CcSwitchImportDeeplinkInput {
   providerName: string
   apiKey: string
   usageScript: string
+  availableModels?: string[]
+  groupName?: string
 }
 
 /**
@@ -54,10 +64,50 @@ function withoutTrailingSlashes(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, '')
 }
 
+// Query the model list this API key can actually use, so the CC Switch default
+// model matches what the key's group can serve instead of a global default.
+export async function fetchCcSwitchAvailableModels(
+  baseUrl: string,
+  apiKey: string
+): Promise<string[]> {
+  try {
+    const root = withoutTrailingSlashes(baseUrl).replace(/\/v1$/, '')
+    const resp = await fetch(`${root}/v1/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    })
+    if (!resp.ok) return []
+    const body = (await resp.json()) as { data?: Array<{ id: string }> }
+    return (body.data || []).map((m) => m.id)
+  } catch {
+    return []
+  }
+}
+
+export function resolveDefaultModel(
+  platform: GroupPlatform | undefined | null,
+  availableModels?: string[],
+  groupName?: string
+): string | undefined {
+  const fallback: Record<string, string> = {
+    openai: OPENAI_CC_SWITCH_CODEX_MODEL,
+    grok: GROK_CC_SWITCH_MODEL
+  }
+  const model = fallback[platform || '']
+  if (!model) return undefined
+  if (!availableModels?.length) return model
+  if (platform === 'openai' && groupName) {
+    const override = OPENAI_CC_SWITCH_GROUP_DEFAULT_MODELS[groupName.trim().toLowerCase()]
+    if (override && availableModels.includes(override)) return override
+  }
+  return availableModels.includes(model) ? model : availableModels[0]
+}
+
 export function resolveCcSwitchImportConfig(
   platform: GroupPlatform | undefined | null,
   clientType: CcSwitchClientType,
-  baseUrl: string
+  baseUrl: string,
+  availableModels?: string[],
+  groupName?: string
 ): CcSwitchImportConfig {
   switch (platform || 'anthropic') {
     case 'antigravity':
@@ -71,7 +121,7 @@ export function resolveCcSwitchImportConfig(
         // CC Switch's Codex provider appends the OpenAI-compatible path itself.
         // Passing /v1 here can make the client request /v1/v1/....
         endpoint: withoutTrailingSlashes(baseUrl),
-        model: OPENAI_CC_SWITCH_CODEX_MODEL
+        model: resolveDefaultModel(platform, availableModels, groupName)
       }
     case 'gemini':
       return {
@@ -82,7 +132,7 @@ export function resolveCcSwitchImportConfig(
       return {
         app: 'grokbuild',
         endpoint: withV1Endpoint(baseUrl),
-        model: GROK_CC_SWITCH_MODEL
+        model: resolveDefaultModel(platform, availableModels, groupName)
       }
     default:
       return {
@@ -93,7 +143,13 @@ export function resolveCcSwitchImportConfig(
 }
 
 export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput): string {
-  const config = resolveCcSwitchImportConfig(input.platform, input.clientType, input.baseUrl)
+  const config = resolveCcSwitchImportConfig(
+    input.platform,
+    input.clientType,
+    input.baseUrl,
+    input.availableModels,
+    input.groupName
+  )
   const entries: [string, string][] = [
     ['resource', 'provider'],
     ['app', config.app],
