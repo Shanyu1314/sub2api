@@ -170,6 +170,7 @@ export default {
     playground: 'Model Playground',
     usage: 'Usage',
     redeem: 'Redeem',
+    cardRecharge: 'Card Recharge',
     affiliate: 'Affiliate Rebates',
     affiliateManagement: 'Affiliate Rebates',
     affiliateInviteRecords: 'Invite Records',

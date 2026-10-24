@@ -8465,6 +8465,9 @@
               class="input"
               :placeholder="t('admin.settings.payment.cardShopURLPlaceholder')"
             />
+            <p class="text-xs text-gray-400 dark:text-gray-500">
+              {{ t("admin.settings.payment.cardShopURLHint") }}
+            </p>
           </div>
 
           <!-- Provider Management -->

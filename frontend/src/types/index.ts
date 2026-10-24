@@ -281,6 +281,8 @@ export interface PublicSettings {
   subscription_enabled: boolean
   /** Mirrors payment config BALANCE_PAYMENT_DISABLED; true = balance top-up closed (subscription-only site). */
   payment_balance_disabled: boolean
+  /** 独立卡密充值入口的店铺地址（与在线支付开关无关）。 */
+  payment_card_shop_url?: string
   model_plaza_enabled: boolean
   model_plaza_require_auth: boolean
   plugin_management_enabled: boolean

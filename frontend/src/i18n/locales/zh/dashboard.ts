@@ -796,8 +796,8 @@ export default {
 
   // Redeem
   redeem: {
-    title: '兑换码',
-    description: '输入兑换码以充值余额或增加并发数',
+    title: '卡密充值',
+    description: '购买卡密后，在此兑换到账',
     currentBalance: '当前余额',
     concurrency: '并发数',
     requests: '请求',
@@ -805,7 +805,7 @@ export default {
     redeemCodePlaceholder: '请输入兑换码',
     redeemCodeHint: '兑换码区分大小写',
     redeeming: '兑换中...',
-    redeemButton: '兑换',
+    redeemButton: '立即兑换',
     redeemSuccess: '兑换成功！',
     redeemFailed: '兑换失败',
     added: '已添加',
@@ -836,7 +836,30 @@ export default {
     historyLoadFailed: '加载兑换记录失败，请重试。',
     userRefreshFailed: '兑换成功，但账户信息刷新失败。',
     subscriptionRefreshFailed: '兑换成功，但订阅状态刷新失败。',
-    pleaseEnterCode: '请输入兑换码'
+    pleaseEnterCode: '请输入兑换码',
+    // 卡密充值独立入口文案
+    buyCard: '购买卡密',
+    buyCardDescription: '购买卡密后，在此兑换到账',
+    buyCardStep1: '前往店铺购买',
+    buyCardStep2: '复制卡密',
+    buyCardStep3: '返回此页兑换',
+    buyCardUnavailable: '购买入口暂不可用',
+    buyCardLoading: '正在加载购买入口…',
+    buyCardRetry: '重试',
+    showCode: '显示兑换码',
+    hideCode: '隐藏兑换码',
+    redeemResultUnknown: '请求已发出但未收到确定响应，兑换可能已完成。请先刷新余额和兑换记录，不要重复提交同一卡密。',
+    redeemUnknownTitle: '暂未确认兑换结果',
+    redeemUnknownToast: '暂未确认兑换结果，请先刷新余额和兑换记录',
+    errors: {
+      REDEEM_CODE_NOT_FOUND: '卡密无效或不存在',
+      REDEEM_CODE_USED: '该卡密已被使用',
+      REDEEM_CODE_EXPIRED: '该卡密已过期',
+      REDEEM_CODE_LOCKED: '该卡密正在处理中，请稍后再试',
+      REDEEM_RATE_LIMITED: '尝试次数过多，请稍后再试',
+      REDEEM_CODE_INVALID: '卡密格式不正确',
+      REDEEM_CODE_UNSUPPORTED_TYPE: '该卡密类型不支持在此兑换'
+    }
   },
 
   // Profile

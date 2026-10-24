@@ -16,8 +16,11 @@ import { resolveRouteDocumentTitle } from './title'
 
 /**
  * Route definitions with lazy loading
+ *
+ * Exported so tests can assert the real registered metadata (e.g. that the
+ * standalone card recharge page does not depend on the online-payment flag).
  */
-const routes: RouteRecordRaw[] = [
+export const routes: RouteRecordRaw[] = [
   // ==================== Setup Routes ====================
   {
     path: '/setup',
@@ -247,7 +250,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'Redeem Code',
+      title: 'Card Recharge',
       titleKey: 'redeem.title',
       descriptionKey: 'redeem.description'
     }
@@ -962,8 +965,7 @@ router.beforeEach(async (to, _from, next) => {
     const restrictedPaths = [
       '/admin/subscriptions',
       '/admin/redeem',
-      '/subscriptions',
-      '/redeem'
+      '/subscriptions'
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {

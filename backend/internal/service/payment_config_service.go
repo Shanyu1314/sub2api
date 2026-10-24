@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -253,11 +255,72 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 	return cfg, nil
 }
 
-func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *PaymentConfig {
-	cardShopURL := strings.TrimSpace(vals[SettingCardShopURL])
-	if cardShopURL == "" {
-		cardShopURL = DefaultCardShopURL
+// ResolveCardShopURL 返回配置的卡密店铺地址，空白时回退到默认店铺。
+// 供 checkout 与公共设置共用，保证两处不会出现不同的默认地址。
+func ResolveCardShopURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return DefaultCardShopURL
 	}
+	return raw
+}
+
+// ValidateCardShopURL 校验卡密店铺地址。仅接受绝对 HTTPS URL，拒绝
+// 相对路径、带用户名/密码、javascript:/data: 等危险输入，并要求有效 hostname。
+// 空白值视为合法（表示回退默认店铺）。
+func ValidateCardShopURL(raw string) error {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return infraerrors.BadRequest("INVALID_CARD_SHOP_URL", "card shop URL must be an absolute HTTPS URL")
+	}
+	if u.Scheme != "https" {
+		return infraerrors.BadRequest("INVALID_CARD_SHOP_URL", "card shop URL must use https")
+	}
+	if u.User != nil {
+		return infraerrors.BadRequest("INVALID_CARD_SHOP_URL", "card shop URL must not contain a username or password")
+	}
+	if !isValidCardShopHostname(u.Hostname()) {
+		return infraerrors.BadRequest("INVALID_CARD_SHOP_URL", "card shop URL must have a valid hostname")
+	}
+	return nil
+}
+
+// isValidCardShopHostname 校验 hostname：接受合法 IP，或至少两级、标签合法的域名。
+// 与前端 sanitizeCardShopUrl 的规则保持一致，拒绝 localhost 等无顶级域的主机名。
+func isValidCardShopHostname(host string) bool {
+	if host == "" || len(host) > 253 {
+		return false
+	}
+	if net.ParseIP(host) != nil {
+		return true
+	}
+	labels := strings.Split(host, ".")
+	if len(labels) < 2 {
+		return false
+	}
+	for _, label := range labels {
+		if label == "" || len(label) > 63 {
+			return false
+		}
+		if label[0] == '-' || label[len(label)-1] == '-' {
+			return false
+		}
+		for _, r := range label {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' {
+				continue
+			}
+			return false
+		}
+	}
+	return true
+}
+
+func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *PaymentConfig {
+	cardShopURL := ResolveCardShopURL(vals[SettingCardShopURL])
 	cfg := &PaymentConfig{
 		Enabled:                   vals[SettingPaymentEnabled] == "true",
 		MinAmount:                 pcParseFloat(vals[SettingMinRechargeAmount], 1),
@@ -373,6 +436,11 @@ func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req Upda
 	if req.RechargeBonusNotice != nil {
 		if err := validateRechargeBonusNotice(*req.RechargeBonusNotice); err != nil {
 			return infraerrors.BadRequest("INVALID_RECHARGE_BONUS_NOTICE", err.Error())
+		}
+	}
+	if req.CardShopURL != nil {
+		if err := ValidateCardShopURL(*req.CardShopURL); err != nil {
+			return err
 		}
 	}
 	m := make(map[string]string)

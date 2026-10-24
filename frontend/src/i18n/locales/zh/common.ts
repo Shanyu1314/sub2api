@@ -170,6 +170,7 @@ export default {
     playground: '模型操练场',
     usage: '使用记录',
     redeem: '兑换',
+    cardRecharge: '卡密充值',
     affiliate: '邀请返利',
     affiliateManagement: '邀请返利',
     affiliateInviteRecords: '邀请记录',

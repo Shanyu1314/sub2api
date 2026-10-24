@@ -723,6 +723,7 @@ export default {
       payment: {
         cardShopURL: '卡密购买店铺地址',
         cardShopURLPlaceholder: 'https://wzyp.cn/shop/CCZ33PW7',
+        cardShopURLHint: '此链接用于独立卡密充值入口，与在线支付开关无关。留空时使用默认店铺（不代表关闭购买）。仅支持绝对 HTTPS 地址。',
         title: '支付设置',
         description: '配置支付系统选项',
         configGuide: '支付配置指南',

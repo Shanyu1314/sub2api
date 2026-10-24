@@ -792,8 +792,8 @@ export default {
 
   // Redeem
   redeem: {
-    title: 'Redeem Code',
-    description: 'Enter your redeem code to add balance or increase concurrency',
+    title: 'Card Recharge',
+    description: 'Buy a card, then redeem it here to top up your balance',
     currentBalance: 'Current Balance',
     concurrency: 'Concurrency',
     requests: 'requests',
@@ -801,7 +801,7 @@ export default {
     redeemCodePlaceholder: 'Enter your redeem code',
     redeemCodeHint: 'Redeem codes are case-sensitive',
     redeeming: 'Redeeming...',
-    redeemButton: 'Redeem Code',
+    redeemButton: 'Redeem Now',
     redeemSuccess: 'Code Redeemed Successfully!',
     redeemFailed: 'Redemption Failed',
     added: 'Added',
@@ -832,7 +832,30 @@ export default {
     historyLoadFailed: 'Failed to load activity. Please try again.',
     userRefreshFailed: 'Redeemed successfully, but failed to refresh account information.',
     subscriptionRefreshFailed: 'Redeemed successfully, but failed to refresh subscription status.',
-    pleaseEnterCode: 'Please enter a redeem code'
+    pleaseEnterCode: 'Please enter a redeem code',
+    // Standalone card recharge entry copy
+    buyCard: 'Buy Card',
+    buyCardDescription: 'Buy a card, then redeem it here to top up your balance',
+    buyCardStep1: 'Go to the shop to buy',
+    buyCardStep2: 'Copy the card code',
+    buyCardStep3: 'Return here to redeem',
+    buyCardUnavailable: 'The purchase entry is temporarily unavailable',
+    buyCardLoading: 'Loading the purchase entry…',
+    buyCardRetry: 'Retry',
+    showCode: 'Show redeem code',
+    hideCode: 'Hide redeem code',
+    redeemResultUnknown: 'The request was sent but no definite response was received; the redemption may have completed. Refresh your balance and redemption history first, and do not submit the same code again.',
+    redeemUnknownTitle: 'Redemption result not yet confirmed',
+    redeemUnknownToast: 'The redemption result is not yet confirmed. Please refresh your balance and redemption history.',
+    errors: {
+      REDEEM_CODE_NOT_FOUND: 'The code is invalid or does not exist',
+      REDEEM_CODE_USED: 'This code has already been used',
+      REDEEM_CODE_EXPIRED: 'This code has expired',
+      REDEEM_CODE_LOCKED: 'This code is being processed, please try again later',
+      REDEEM_RATE_LIMITED: 'Too many attempts, please try again later',
+      REDEEM_CODE_INVALID: 'The code format is invalid',
+      REDEEM_CODE_UNSUPPORTED_TYPE: 'This type of code cannot be redeemed here'
+    }
   },
 
   // Profile

@@ -377,6 +377,7 @@ type PublicSettings struct {
 	BackendModeEnabled       bool
 	PaymentEnabled           bool
 	PaymentBalanceDisabled   bool
+	PaymentCardShopURL       string
 	OIDCOAuthEnabled         bool
 	OIDCOAuthProviderName    string
 	GitHubOAuthEnabled       bool

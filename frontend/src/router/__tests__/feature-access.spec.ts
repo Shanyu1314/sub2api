@@ -110,7 +110,6 @@ describe('feature route guard', () => {
   beforeAll(async () => {
     await import('@/router')
   })
-
   beforeEach(() => {
     authStore.isAuthenticated = true
     authStore.isAdmin = false
@@ -207,6 +206,95 @@ describe('subscription route guard (opt-out flag)', () => {
     const { navigation, next } = runGuard({ requiresSubscription: true }, '/subscriptions')
     await navigation
 
+    expect(next).toHaveBeenCalledWith('/admin/dashboard')
+  })
+})
+
+describe('registered /redeem card recharge route', () => {
+  let realRoutes: Array<{ path: string; meta?: Record<string, unknown> }> = []
+
+  beforeAll(async () => {
+    // 读取真实注册的路由元数据，而不是测试里手写的空对象。
+    const mod = await import('@/router')
+    realRoutes = mod.routes as unknown as Array<{ path: string; meta?: Record<string, unknown> }>
+  })
+
+  const metaOf = (path: string) => {
+    const route = realRoutes.find((r) => r.path === path)
+    if (!route) throw new Error(`route ${path} is not registered`)
+    return { ...(route.meta ?? {}) }
+  }
+
+  beforeEach(() => {
+    authStore.isAdmin = false
+    authStore.isSimpleMode = false
+    authStore.isAuthenticated = true
+    appStore.publicSettingsLoaded = true
+    appStore.cachedPublicSettings = {}
+    appStore.fetchPublicSettings.mockReset()
+  })
+
+  it('does not require the online-payment flag on the real /redeem route', () => {
+    const meta = metaOf('/redeem')
+    expect(meta.requiresAuth).toBe(true)
+    expect(meta.requiresPayment).toBeUndefined()
+    expect(meta.requiresSubscription).toBeUndefined()
+  })
+
+  it('keeps /purchase payment-gated and /admin/redeem admin-only', () => {
+    expect(metaOf('/purchase').requiresPayment).toBe(true)
+    expect(metaOf('/admin/redeem').requiresAdmin).toBe(true)
+  })
+
+  it.each([
+    ['payment off', { payment_enabled: false }],
+    ['payment + balance recharge off', { payment_enabled: false, payment_balance_disabled: true }],
+    [
+      'payment + balance + subscription off',
+      { payment_enabled: false, payment_balance_disabled: true, subscription_enabled: false },
+    ],
+  ])('lets a normal user open the real /redeem route when %s', async (_name, settings) => {
+    appStore.cachedPublicSettings = settings
+
+    const { navigation, next } = runGuard(metaOf('/redeem'), '/redeem')
+    await navigation
+
+    expect(next).toHaveBeenCalledOnce()
+    expect(next).toHaveBeenCalledWith()
+  })
+
+  it('lets the real /redeem route through in simple mode even with every paid feature off', async () => {
+    authStore.isSimpleMode = true
+    appStore.cachedPublicSettings = {
+      payment_enabled: false,
+      payment_balance_disabled: true,
+      subscription_enabled: false,
+    }
+
+    const { navigation, next } = runGuard(metaOf('/redeem'), '/redeem')
+    await navigation
+
+    expect(next).toHaveBeenCalledOnce()
+    expect(next).toHaveBeenCalledWith()
+  })
+
+  it('still requires authentication for the real /redeem route', async () => {
+    authStore.isAuthenticated = false
+
+    const { navigation, next } = runGuard(metaOf('/redeem'), '/redeem')
+    await navigation
+
+    expect(next).toHaveBeenCalledWith({ path: '/login', query: { redirect: '/redeem' } })
+  })
+
+  it('still blocks the admin /admin/redeem page in simple mode', async () => {
+    authStore.isAdmin = true
+    authStore.isSimpleMode = true
+
+    const { navigation, next } = runGuard(metaOf('/admin/redeem'), '/admin/redeem')
+    await navigation
+
+    expect(next).toHaveBeenCalledOnce()
     expect(next).toHaveBeenCalledWith('/admin/dashboard')
   })
 })

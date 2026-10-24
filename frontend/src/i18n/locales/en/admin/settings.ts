@@ -728,6 +728,7 @@ export default {
       payment: {
         cardShopURL: 'Recharge card shop URL',
         cardShopURLPlaceholder: 'https://wzyp.cn/shop/CCZ33PW7',
+        cardShopURLHint: 'This link powers the standalone card recharge entry and is independent of the online payment switch. Leave empty to use the default shop (this does not disable purchasing). Absolute HTTPS URLs only.',
         title: 'Payment Settings',
         description: 'Configure payment system options',
         configGuide: 'Configuration Guide',

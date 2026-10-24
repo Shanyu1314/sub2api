@@ -115,33 +115,14 @@
               <span v-else>{{ t('payment.createOrder') }} {{ formatSelectedPaymentAmount(totalAmount) }}</span>
             </button>
             </template>
-            <div class="card space-y-4 p-6">
-              <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('payment.cardRecharge.title') }}</h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('payment.cardRecharge.description') }}</p>
-              </div>
-              <input
-                v-model="redeemCode"
-                type="password"
-                autocomplete="off"
-                spellcheck="false"
-                class="input"
-                :placeholder="t('payment.cardRecharge.placeholder')"
-                :disabled="redeeming"
-                @keyup.enter="handleCardRedeem"
-              />
-              <p v-if="redeemStatus" class="text-sm" :class="redeemStatusError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'" aria-live="polite" role="status">
-                {{ redeemStatus }}
-              </p>
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button class="btn btn-primary" :disabled="redeeming || !redeemCode.trim()" @click="handleCardRedeem">
-                  {{ redeeming ? t('common.processing') : t('payment.cardRecharge.redeem') }}
-                </button>
-                <a v-if="cardShopURL" class="btn btn-secondary text-center" :href="cardShopURL" target="_blank" rel="noopener noreferrer">
-                  {{ t('payment.cardRecharge.buy') }}
-                </a>
-                <router-link class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400" to="/redeem">
-                  {{ t('payment.cardRecharge.history') }}
+            <div class="card p-6">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('payment.cardRecharge.title') }}</h2>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('payment.cardRecharge.description') }}</p>
+                </div>
+                <router-link class="btn btn-primary shrink-0" to="/redeem">
+                  {{ t('payment.cardRecharge.redeem') }}
                 </router-link>
               </div>
             </div>
@@ -321,9 +302,7 @@ import { useSubscriptionStore } from '@/stores/subscriptions'
 import { useAppStore } from '@/stores'
 import { FeatureFlags, resolveFeatureFlag } from '@/utils/featureFlags'
 import { paymentAPI } from '@/api/payment'
-import { redeemAPI } from '@/api'
 import { extractApiErrorMessage, extractI18nErrorMessage } from '@/utils/apiError'
-import { sanitizeUrl } from '@/utils/url'
 import { isMobileDevice } from '@/utils/device'
 import { hasPeakRate, formatPeakRateWindow, serverTimezoneLabel, type PeakRateFields } from '@/utils/peak-rate'
 import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderType } from '@/types/payment'
@@ -387,10 +366,6 @@ const amount = ref<number | null>(null)
 const selectedMethod = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const previewImage = ref('')
-const redeemCode = ref('')
-const redeeming = ref(false)
-const redeemStatus = ref('')
-const redeemStatusError = ref(false)
 
 const paymentPhase = ref<'select' | 'paying'>('select')
 
@@ -580,32 +555,6 @@ const renderedBonusNotice = computed(() => {
   if (!raw) return ''
   return DOMPurify.sanitize(marked.parse(raw, { async: false, gfm: true, breaks: true }))
 })
-
-const cardShopURL = computed(() => sanitizeUrl(checkout.value.card_shop_url || ''))
-
-async function handleCardRedeem() {
-  const code = redeemCode.value.trim()
-  if (!code || redeeming.value) return
-  redeeming.value = true
-  redeemStatus.value = ''
-  redeemStatusError.value = false
-  try {
-    const result = await redeemAPI.redeem(code)
-    redeemStatus.value = result.message || t('payment.cardRecharge.success')
-    redeemCode.value = ''
-    try {
-      await authStore.refreshUser()
-    } catch (error) {
-      console.error('Failed to refresh user after redeem:', error)
-      appStore.showWarning(t('redeem.userRefreshFailed'))
-    }
-  } catch (error) {
-    redeemStatus.value = extractApiErrorMessage(error) || t('payment.cardRecharge.failure')
-    redeemStatusError.value = true
-  } finally {
-    redeeming.value = false
-  }
-}
 
 // 订阅功能开关（public settings 的 subscription_enabled，opt-out）。关闭后购买页只保留充值：
 // 不再渲染「订阅」tab，只剩单个 tab 时顶部切换器也随之隐藏。

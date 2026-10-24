@@ -309,3 +309,87 @@ func TestSettingService_GetPublicSettings_PaymentBalanceDisabledStrictTrue(t *te
 		})
 	}
 }
+
+func TestSettingService_GetPublicSettings_PaymentCardShopURL(t *testing.T) {
+	svc := NewSettingService(&settingPublicRepoStub{values: map[string]string{}}, &config.Config{})
+	settings, err := svc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, DefaultCardShopURL, settings.PaymentCardShopURL)
+
+	custom := "https://shop.example/cards"
+	customSvc := NewSettingService(&settingPublicRepoStub{values: map[string]string{SettingCardShopURL: "  " + custom + "  "}}, &config.Config{})
+	customSettings, err := customSvc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, custom, customSettings.PaymentCardShopURL)
+}
+
+func TestValidateCardShopURL(t *testing.T) {
+	valid := []string{
+		"",
+		"   ",
+		"https://wzyp.cn/shop/CCZ33PW7",
+		"https://shop.example.com/cards?utm=1",
+		"https://192.168.1.10/shop",
+		"https://[2001:db8::1]/shop",
+	}
+	for _, raw := range valid {
+		if err := ValidateCardShopURL(raw); err != nil {
+			t.Fatalf("ValidateCardShopURL(%q) = %v, want nil", raw, err)
+		}
+	}
+
+	invalid := []string{
+		"http://wzyp.cn/shop",
+		"javascript:alert(1)",
+		"data:text/html,hi",
+		"vbscript:msgbox(1)",
+		"file:///etc/passwd",
+		"/relative/path",
+		"//wzyp.cn/shop",
+		"https://",
+		"https://user:pass@wzyp.cn/shop",
+		"https://user@wzyp.cn/shop",
+		"https://localhost/shop",
+		"https://-bad-.com/shop",
+		"https://bad_host.com/shop",
+	}
+	for _, raw := range invalid {
+		if err := ValidateCardShopURL(raw); err == nil {
+			t.Fatalf("ValidateCardShopURL(%q) = nil, want error", raw)
+		}
+	}
+}
+
+// 公共设置与 HTML 注入必须一致地暴露卡密店铺地址：默认值与自定义值都要对齐，
+// 既验证字段存在，也验证取值相同。
+func TestSettingService_PaymentCardShopURLMatchesInjection(t *testing.T) {
+	cases := []struct {
+		name  string
+		value map[string]string
+		want  string
+	}{
+		{name: "default when unset", value: map[string]string{}, want: DefaultCardShopURL},
+		{name: "default when blank", value: map[string]string{SettingCardShopURL: "   "}, want: DefaultCardShopURL},
+		{
+			name:  "custom value",
+			value: map[string]string{SettingCardShopURL: "https://shop.example/cards"},
+			want:  "https://shop.example/cards",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := NewSettingService(&settingPublicRepoStub{values: tc.value}, &config.Config{})
+
+			settings, err := svc.GetPublicSettings(context.Background())
+			require.NoError(t, err)
+			require.Equal(t, tc.want, settings.PaymentCardShopURL)
+
+			raw, err := svc.GetPublicSettingsForInjection(context.Background())
+			require.NoError(t, err)
+			payload, ok := raw.(*PublicSettingsInjectionPayload)
+			require.True(t, ok)
+			require.Equal(t, tc.want, payload.PaymentCardShopURL)
+			require.Equal(t, settings.PaymentCardShopURL, payload.PaymentCardShopURL)
+		})
+	}
+}
