@@ -239,6 +239,15 @@ if grep -qF "prune" "$CASE_DIR/state/docker.log"; then
 fi
 ok "successful deploy cleans only this project's stale images and never prunes globally"
 
+setup_case success-no-stale-images
+export STUB_IMAGES="ghcr.io/shanyu1314/sub2api:prev
+ghcr.io/shanyu1314/sub2api:new
+other-project/app:1"
+if ! run_deploy; then fail "deploy with nothing to clean must succeed: $(cat "$CASE_DIR/out.log")"; fi
+assert_compose "ghcr.io/shanyu1314/sub2api:new"
+assert_no_docker "image rm"
+ok "successful deploy with no stale images returns zero"
+
 # 语法自检
 /bin/bash -n "$SCRIPT" || fail "deploy.sh has a syntax error"
 ok "deploy.sh passes bash -n"

@@ -45,13 +45,14 @@ current_image() {
     | head -1 | sed -E 's/^[[:space:]]+image:[[:space:]]+//'
 }
 set_image() {
-  local tmp; tmp="$(mktemp "$APP_DIR/.compose.XXXXXX")"
+  local tmp; tmp="$(mktemp "$APP_DIR/.compose.XXXXXX")" || return 1
   awk -v img="$1" '
     !done && $0 ~ /^[[:space:]]+image:[[:space:]]+(sub2api-boostapi|ghcr\.io\/shanyu1314\/sub2api):/ {
       match($0,/^[[:space:]]+/); print substr($0,1,RLENGTH) "image: " img; done=1; next }
-    { print }' "$COMPOSE" > "$tmp"
+    { print }' "$COMPOSE" > "$tmp" || { rm -f "$tmp"; return 1; }
   [ "$(grep -c "image: $1" "$tmp")" = 1 ] || { rm -f "$tmp"; echo "compose rewrite failed"; return 1; }
-  cat "$tmp" > "$COMPOSE"; rm -f "$tmp"
+  chmod --reference="$COMPOSE" "$tmp" 2>/dev/null || chmod 600 "$tmp" || { rm -f "$tmp"; return 1; }
+  mv -f "$tmp" "$COMPOSE" || { rm -f "$tmp"; return 1; }
 }
 wait_healthy() {
   local i st code
@@ -90,12 +91,11 @@ rollback() {
 
 # 只清理本项目镜像：保留当前与上一版，跳过被容器占用的镜像，绝不触碰其他项目/数据库/卷。
 cleanup_images() {
-  local keep img in_use
-  keep="$(printf '%s\n%s\n' "$NEW_IMAGE" "$PREV_IMAGE")"
+  local img in_use
   in_use="$(docker ps -a --format '{{.Image}}' 2>/dev/null || true)"
   docker image ls --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
-    | grep -E "$PROJECT_IMAGE_RE" \
-    | grep -vxF "$keep" \
+    | awk -v pattern="$PROJECT_IMAGE_RE" -v current="$NEW_IMAGE" -v previous="$PREV_IMAGE" \
+        '$0 ~ pattern && $0 != current && $0 != previous' \
     | while IFS= read -r img; do
         [ -n "$img" ] || continue
         if printf '%s\n' "$in_use" | grep -qxF "$img"; then
@@ -172,5 +172,5 @@ if ! wait_healthy; then
 fi
 
 log "deploy OK"
-cleanup_images
+cleanup_images || log "warn: image cleanup failed; application deployment is healthy"
 exit 0
