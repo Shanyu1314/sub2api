@@ -28,7 +28,6 @@ HEALTH_ATTEMPTS="${BOOSTAPI_HEALTH_ATTEMPTS:-50}"
 HEALTH_INTERVAL="${BOOSTAPI_HEALTH_INTERVAL:-3}"
 LOW="nice -n 19 ionice -c3"
 IMAGE_RE='^[a-z0-9./_-]+:[A-Za-z0-9._-]+$'
-PROJECT_IMAGE_RE='^(sub2api-boostapi|ghcr\.io/shanyu1314/sub2api):'
 
 [[ "$NEW_IMAGE" =~ $IMAGE_RE ]] || { echo "invalid image ref"; exit 2; }
 [[ "$NEW_IMAGE" == ghcr.io/shanyu1314/sub2api:* ]] || { echo "refusing image outside ghcr.io/shanyu1314/sub2api"; exit 2; }
@@ -94,8 +93,8 @@ cleanup_images() {
   local img in_use
   in_use="$(docker ps -a --format '{{.Image}}' 2>/dev/null || true)"
   docker image ls --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
-    | awk -v pattern="$PROJECT_IMAGE_RE" -v current="$NEW_IMAGE" -v previous="$PREV_IMAGE" \
-        '$0 ~ pattern && $0 != current && $0 != previous' \
+    | awk -v current="$NEW_IMAGE" -v previous="$PREV_IMAGE" \
+        '/^(sub2api-boostapi|ghcr[.]io\/shanyu1314\/sub2api):/ && $0 != current && $0 != previous' \
     | while IFS= read -r img; do
         [ -n "$img" ] || continue
         if printf '%s\n' "$in_use" | grep -qxF "$img"; then
