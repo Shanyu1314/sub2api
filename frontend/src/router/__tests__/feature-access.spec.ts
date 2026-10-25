@@ -234,6 +234,16 @@ describe('registered /redeem card recharge route', () => {
     appStore.fetchPublicSettings.mockReset()
   })
 
+  it('opens the separate recharge page with payments off in simple mode', async () => {
+    authStore.isSimpleMode = true
+    appStore.cachedPublicSettings = { payment_enabled: false, subscription_enabled: false }
+    expect(metaOf('/recharge').requiresAuth).toBe(true)
+    expect(metaOf('/recharge').requiresPayment).toBeUndefined()
+    const { navigation, next } = runGuard(metaOf('/recharge'), '/recharge')
+    await navigation
+    expect(next).toHaveBeenCalledWith()
+  })
+
   it('does not require the online-payment flag on the real /redeem route', () => {
     const meta = metaOf('/redeem')
     expect(meta.requiresAuth).toBe(true)

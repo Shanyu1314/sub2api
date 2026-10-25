@@ -1,4 +1,15 @@
 export default {
+  rechargeGuide: {
+    description: '购买卡密并兑换到账户余额',
+    account: '充值账户',
+    instructions: '充值说明',
+    notice: '本站使用卡密充值。请前往店铺购买卡密，购买后复制卡密，返回本站「兑换」页面完成兑换。到账额度以所购卡密为准。',
+    buy: '点击购买卡密',
+    step1: '点击上方链接，前往店铺选择并购买卡密。',
+    step2: '购买完成后，复制店铺提供的卡密。',
+    step3: '返回本站「兑换」页面，粘贴卡密并确认兑换。',
+    redeem: '已有卡密，前往兑换'
+  },
   dashboard: {
     title: '仪表盘',
     welcomeMessage: '欢迎回来！这是您账户的概览。',

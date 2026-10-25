@@ -1,4 +1,15 @@
 export default {
+  rechargeGuide: {
+    description: 'Buy a card code and redeem it for account balance',
+    account: 'Recharge account',
+    instructions: 'How to recharge',
+    notice: 'Recharge with a card code purchased from our shop. Copy the code after purchase, then return to the Redeem page. The credited amount is determined by your card code.',
+    buy: 'Click to buy a card code',
+    step1: 'Open the shop using the link above and purchase a card code.',
+    step2: 'Copy the code provided by the shop after purchase.',
+    step3: 'Return to Redeem, paste your code and confirm redemption.',
+    redeem: 'Already have a code? Redeem it'
+  },
   dashboard: {
     title: 'Dashboard',
     welcomeMessage: "Welcome back! Here's an overview of your account.",

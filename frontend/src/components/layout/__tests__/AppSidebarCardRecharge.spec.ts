@@ -88,7 +88,7 @@ describe('AppSidebar card recharge entry', () => {
   it('shows the card recharge entry for a normal user', async () => {
     const wrapper = await mountSidebar()
     expect(redeemLink(wrapper)).toBeTruthy()
-    expect(redeemLink(wrapper)!.text()).toBe('nav.cardRecharge')
+    expect(redeemLink(wrapper)!.text()).toBe('nav.redeem')
     wrapper.unmount()
   })
 
@@ -122,6 +122,16 @@ describe('AppSidebar card recharge entry', () => {
     const wrapper = await mountSidebar()
 
     expect(redeemLink(wrapper)).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it.each([false, true])('shows separate recharge and redeem entries with payments off (admin=%s)', async (isAdmin) => {
+    h.state.isAdmin = isAdmin
+    h.state.cachedPublicSettings = { payment_enabled: false, subscription_enabled: false }
+    const wrapper = await mountSidebar()
+    expect(hasLink(wrapper, '/recharge')).toBe(true)
+    expect(redeemLink(wrapper)!.text()).toBe('nav.redeem')
+    expect(wrapper.findAll('a').find(a => a.attributes('href') === '/recharge')!.text()).toBe('nav.recharge')
     wrapper.unmount()
   })
 
