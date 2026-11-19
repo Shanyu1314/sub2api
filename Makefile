@@ -27,6 +27,7 @@ FRONTEND_CRITICAL_VITEST := \
 	src/router/__tests__/feature-access.spec.ts \
 	src/utils/__tests__/cardShopUrl.spec.ts \
 	src/components/layout/__tests__/AppSidebarCardRecharge.spec.ts \
+	src/components/layout/__tests__/AuthLayoutStarfield.spec.ts \
 	src/views/user/__tests__/ChannelStatusView.mode.spec.ts \
 	src/components/user/profile/__tests__/ProfileInfoCard.spec.ts \
 	src/components/user/profile/__tests__/ProfileIdentityBindingsSection.spec.ts \
