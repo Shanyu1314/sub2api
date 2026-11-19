@@ -10,10 +10,10 @@
 | 项目 | 当前值 |
 | --- | --- |
 | 站点 | `https://boostapi.top` |
-| 应用版本 | `0.2.18-boostapi.2` |
-| 发布标签 | `boostapi-v0.2.18-r2` |
-| 对应提交 | `b18dc2b65327e2aabc638c22e4b907e6ebf55b27` |
-| 生产镜像 | `ghcr.io/shanyu1314/sub2api:boostapi-v0.2.18-r2` |
+| 应用版本 | `0.2.18-boostapi.3` |
+| 发布标签 | `boostapi-v0.2.18-r3` |
+| 对应提交 | `21de46a983e6e1da58ca5999f00cfa00d0c4daa5` |
+| 生产镜像 | `ghcr.io/shanyu1314/sub2api:boostapi-v0.2.18-r3` |
 | 工作分支 | `boostapi/card-recharge-fixes` |
 | GitHub 仓库 | `Shanyu1314/sub2api` |
 | 服务器 | `107.172.79.109`，本机 SSH 别名 `3cpu4g` |
@@ -257,7 +257,7 @@ ssh 3cpu4g 'nginx -t; tail -n 80 /var/log/nginx/error.log'
 - 上游升级前保留已有定制提交和功能清单，逐条检查模型操练场、客户端配置、图片适配器、充值/兑换。
 - 生产源码压缩包不等于正在运行版本的精确源码；以 Git 提交、发布标签和镜像摘要为准。
 - 发布产物不可只看版本号或 `healthy`，必须检查公网实际前端脚本和关键用户路径。
-- 不在服务器保留多份源码、前端 dist 或冗余镜像。当前应用镜像只保留 `boostapi-v0.2.18-r2` 和上一版 `boostapi-4701db904`。
+- 不在服务器保留多份源码、前端 dist 或冗余镜像。部署脚本保留当前版本及上一版；本次分别为 `boostapi-v0.2.18-r3` 和 `boostapi-v0.2.18-r2`。
 - 不在生产环境跑编译、压力测试、充值测试或部署失败演练。
 - 生产有任何配置或迁移变化，更新本手册的日期、版本、命令和验收边界。
 
@@ -270,3 +270,15 @@ ssh 3cpu4g 'nginx -t; tail -n 80 /var/log/nginx/error.log'
 - **本地验收：** 前端生产构建通过；`make test-frontend` 的 lint、类型检查及 35 个测试文件（663 项）通过。Ego Lite 检查登录页桌面及 390×844 手机视口，注册页未启用星空。截图在 `output/starfield/登录桌面.png` 和 `output/starfield/登录手机.png`（本地材料，不随仓库分发）。未提交真实账号密码，不视为端到端鉴权验收。
 - **发布阻塞：** 候选分支推送成功，但该提交无 Actions 运行记录；手动触发 `deploy=false` 返回 HTTP 422，提示仓库 Actions 已禁用。Actions 页面说明该 fork 因 Actions 使用规模暂停运行，需要仓库维护者重新启用。仅看工作流的 `active` 字段不能确认可运行。
 - **交接：** 维护者登录 GitHub，在本仓库 Actions 页重新启用工作流。按第 5 节让候选分支触发检查，核对同一 SHA 的 CI、Security Scan、候选镜像构建均成功，再确认下一个标签可用并发布。发布后追加实际 SHA、Actions run、镜像摘要、公网版本，以及未登录会话下 `/login` 的桌面和手机验收结果；之后再更新第 1 节。
+
+### 续记：Actions 恢复与候选安全修复
+
+维护者已重新启用该 fork 的 Actions。原候选 `d7175a001` 的 [安全扫描](https://github.com/Shanyu1314/sub2api/actions/runs/44488952033) 拦截了已有依赖问题，未对该提交打标签。修复提交 `21de46a98` 仅回移上游安全补丁和构建适配：Go 1.27.4、brotli 1.2.7、compress 1.20.2、x/net 0.62.0，以及 vue-i18n 11.4.16、decode-uri-component 0.5.1、follow-redirects 1.16.2。未放宽扫描规则、新增豁免或合并上游业务变更。
+
+该提交的[前后端安全扫描](https://github.com/Shanyu1314/sub2api/actions/runs/44489903714)均通过。其余候选门禁按同一 SHA 核对：[CI](https://github.com/Shanyu1314/sub2api/actions/runs/44489903713)、[候选镜像构建](https://github.com/Shanyu1314/sub2api/actions/runs/44489903708)。发布前源站检查：r2 容器健康，根分区可用 51 GB。
+
+### 正式上线与验收
+
+- **生产切换：** 2026-11-19 17:15:48（北京时间），`r2` → `r3`。[正式发布](https://github.com/Shanyu1314/sub2api/actions/runs/44492009154)的 verify、build、deploy 全部成功。部署日志确认数据库备份约 80 MB，第一次公网健康检查即 HTTP 200。正式镜像摘要为 `sha256:e488adf4790760629bdeaafb8f2aaae3d4c4e4b4bcabb1ffac6a2143d3809007`；回滚镜像标签为 `boostapi-v0.2.18-r2`。
+- **质量检查：** 同一 SHA 的候选 CI、安全扫描和候选镜像构建全部通过（候选 deploy 按设计跳过）。[标签安全扫描](https://github.com/Shanyu1314/sub2api/actions/runs/44492009189)通过；[标签独立 CI](https://github.com/Shanyu1314/sub2api/actions/runs/44492009252)首次执行的 macOS `shell` 作业未分配到运行器并被取消；单独重跑后通过，标签 CI 最终结果为 success，未重复部署。
+- **公网验收：** 公共设置返回 `0.2.18-boostapi.3`，`/health` 返回 `ok`。Ego Lite 在未登录状态下以 900×634 和 390×844 检查 `/login`，确认实际 1440×900 星空资源和站点 Logo 成功解码、拉丁文及中文译句可见、邮箱密码表单和注册入口存在，两种视口均无横向溢出。点注册到达 `/register`，保留原注册布局。未提交真实凭据。本地截图为 `output/starfield/r3-线上登录桌面.png` 和 `output/starfield/r3-线上登录手机.png`。
